@@ -1,12 +1,16 @@
 import argparse
 import sys
+from Docker.post_install import run_docker_compose
 from src import start_qdrant as sq
 from src.ETL import Etl
 
 def main():
-    # Configura os argumentos da linha de comando
+    """Função principal que gerencia a execução do framework."""
     parser = argparse.ArgumentParser(
         description="Framework para extração e armazenamento de dados em Qdrant"
+    )
+    parser.add_argument(
+        "--docker", action="store_true", help="Executa o processo do Docker para criar o storage"
     )
     parser.add_argument(
         "--etl", action="store_true", help="Executa o processo de ETL para extrair e salvar dados"
@@ -22,18 +26,29 @@ def main():
 
     # Verifica qual ação executar
     if args.all:
+        execute_docker()
         execute_etl()
         upload_to_qdrant()
+    elif args.docker:
+        execute_docker()
     elif args.etl:
         execute_etl()
     elif args.upload:
         upload_to_qdrant()
     else:
-        print("Nenhuma ação especificada. Use --etl, --upload ou --all.")
+        print("Nenhuma ação especificada. Use --docker, --etl, --upload ou --all.")
         sys.exit(1)
 
+def execute_docker():
+    """Executa o processo do Docker para iniciar o Qdrant."""
+    try:
+        run_docker_compose()
+        print("Docker iniciado com sucesso.")
+    except Exception as e:
+        print(f"Erro ao executar o processo do Docker: {e}")
+
 def execute_etl():
-    """Executa o processo de ETL."""
+    """Executa o processo de ETL para extrair e salvar dados."""
     try:
         etl = Etl()
         etl.run()
