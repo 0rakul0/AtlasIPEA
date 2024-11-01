@@ -1,75 +1,115 @@
-# Atlas IPEA - Framework de Extração e Banco Vetorial
+# AtlasIPEA
 
-Este projeto visa estruturar e armazenar publicações do **Atlas da Violência** em um banco de vetores utilizando **Qdrant**.
+Framework para extração e armazenamento de dados em Qdrant.
+
+## Descrição:
+Este projeto é dedicado a extrair dados de PDFs, estruturá-los em um formato adequado e armazená-los em um banco de dados vetorial utilizando o Qdrant, possibilitando consultas eficientes e organizadas.
+
+---
 
 ## Sumário
 1. [Objetivo](#objetivo)
-2. [Instalações](#instalações)
-3. [Componentes do Projeto](#componentes-do-projeto)
-4. [Banco de Vetores](#banco-de-vetores)
-5. [LLM](#llm)
-6. [Autor](#autor)
+2. [Instalações](#instalacoes)
+3. [Scripts Principais](#scripts-principais)
+4. [Uso do Framework](#uso-do-framework)
+5. [Estrutura dos Dados](#estrutura-dos-dados)
+6. [Banco Vetorial](#banco-vetorial)
+7. [LLM](#llm)
+8. [Autor](#autor)
 
-## Objetivo
-O projeto automatiza a extração, tratamento e armazenamento de informações contidas em documentos PDF da publicação *Atlas da Violência* em uma estrutura vetorial que pode ser usada para consultas avançadas.
-[link do atlas](https://www.ipea.gov.br/atlasviolencia/publicacoes)
-___
-## Projeto:
-1. **Instalações**: 
-    - para as instalações minimas
+---
+
+## Objetivo:
+Desenvolver um processo de ETL para extrair dados de publicações disponíveis em PDF e armazená-los no Qdrant em uma estrutura vetorial para consultas rápidas.
+
+---
+
+## Instalações:
+Para instalar as dependências necessárias:
 
 ```bash
-pip install qdrant-client sentence-transformers tqdm pandas BeautifulSoup4 pdfplumber
+pip install qdrant-client sentence-transformers tqdm pandas beautifulsoup4 pdfplumber
 ```
---- 
-## Componentes do Projeto
-### SCRIPT_QDRANT
-Este script cria e configura o banco de dados com a coleção AtlasIpea. Ele inclui funções para:
 
-Instanciar o banco
-Gerar chunks de dados
-Converter arquivos CSV para documentos
-Realizar upload dos dados para o banco
+---
 
-### DOC
-estrutura baseica do documento 
+## Scripts Principais
+
+### `script_qdrant.py`
+Este script gera o banco de dados no Qdrant, com as principais funções:
+- Instanciar o banco de dados e configurar a coleção.
+- Gerar chunks (blocos de texto) para armazenamento.
+- Converter dados de CSV para documentos.
+- Fazer upload para o banco de dados.
+
+### `ETL.py`
+Script de Extração, Transformação e Carregamento (ETL) para extrair textos de PDFs, estruturá-los e salvá-los na pasta `./LAKE`.
+---
+
+## Uso do Framework
+
+Agora você pode executar o framework utilizando argumentos de linha de comando:
+
+- **Executar somente o processo de ETL**:
+  
+  ```bash
+  python main.py --etl
+  ```
+
+- **Fazer somente o upload para o banco Qdrant**:
+
+  ```bash
+  python main.py --upload
+  ```
+
+- **Executar o processo completo (ETL e upload)**:
+
+  ```bash
+  python main.py --all
+  ```
+
+Essas opções permitem uma execução mais flexível e controlada do fluxo do framework.
+
+---
+
+## Estrutura dos Dados
+O objetivo do ETL é extrair os textos e organizá-los no formato JSON com a seguinte estrutura:
+
+```json
+{
+    "chunk": [
+        {
+            "pagina": 1,
+            "origem": "example.pdf",
+            "paragrafo": 1,
+            "capitulo": "Introdução",
+            "texto": "Este é um texto de exemplo."
+        }
+    ]
+}
 ```
-class Document:
-    def __init__(self, page_content, metadata):
-        self.page_content = page_content
-        self.metadata = metadata
-```
-está localizado na pasta util
 
-### ETL
-o objetivo de extrair os textos é deixar na estrutura de 
-```py
-chunk= [
-   {
-       'pagina': 1,
-       'origem': 'example.pdf',
-       'paragrafo': 1,
-       'capitulo': 'Introdução',
-       'texto': 'Este é um texto de exemplo.'
-   }
-]
-```
-Os dados processados são salvos na pasta ./LAKE.
+Cada arquivo processado é salvo na pasta `./LAKE`.
 
-### Diretório LAKE
-A pasta LAKE armazena os arquivos extraídos dos PDFs para processamento.
+---
 
-## Banco Vetorial
-O banco de dados Qdrant é utilizado para armazenar as informações em um Docker. Para iniciar o banco, execute:
+## Banco Vetorial:
+O banco de dados vetorial utilizado é o Qdrant, configurado via Docker. Para iniciar o banco, execute o comando:
 
-bash
-
-```
+```bash
 cd ./Docker
 docker-compose up
 ```
-## LLM
-Este projeto usa o Llama 3.1 como modelo de linguagem.
 
-## Autor
-Jefferson Silva dos Anjos, [GitHub - 0rakul0](http://github.com/0rakul0)
+Nome do banco: `AtlasIpea`
+
+---
+
+## LLM:
+A versão do LLM utilizada é o **Llama 3.1**.
+
+---
+
+## Autor:
+Jefferson Silva dos Anjos  
+GitHub: [0rakul0](https://github.com/0rakul0)

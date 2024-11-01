@@ -1,2 +1,6 @@
-sentence-transformers
 qdrant-client
+sentence-transformers
+tqdm
+pandas
+beautifulsoup4
+pdfplumber
