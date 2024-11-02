@@ -29,6 +29,7 @@ Para instalar as dependências necessárias:
 
 ```bash
 pip install qdrant-client sentence-transformers tqdm pandas beautifulsoup4 pdfplumber
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
 ---
