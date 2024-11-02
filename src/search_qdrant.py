@@ -8,28 +8,57 @@ embedd = SentenceTransformer('all-MiniLM-L6-v2', device=device)
 client = QdrantClient(url="http://localhost:6333")
 
 
+def buscar_semantico(query, top_k=10):
+    query_vector = embedd.encode(query).tolist()
 
-def consultar_banco(query_text, limit=5):
-    # Gerando o vetor de consulta
-    query_vector = embedd.encode(query_text).tolist()
-
-    # Realizando a consulta com base no vetor de consulta
-    response = client.search(
+    # Realiza a busca no Qdrant
+    resultados = client.search(
         collection_name="AtlasIpea",
         query_vector=query_vector,
-        limit=limit
+        limit=top_k
     )
 
-    return response
+    documentos_encontrados = []
+    for ponto in resultados:
+        documento = {
+            'id': ponto.id,
+            'distancia': ponto.score,
+            'metadata': ponto.payload['metadata'],
+            'conteudo_da_pagina': ponto.payload['conteudo_da_pagina']
+        }
+        documentos_encontrados.append(documento)
+    return documentos_encontrados
 
+def listar_capitulos_da_busca(query, top_k=10):
+    documentos = buscar_semantico(query, top_k)
+    capitulos = [doc['metadata']['capitulo'] for doc in documentos if 'metadata' in doc and 'capitulo' in doc['metadata']]
+    capitulos = set(capitulos)
+    return capitulos
+
+def listar_chaves_da_busca(query, top_k=10):
+    documentos = buscar_semantico(query, top_k)
+    capitulos = [doc['metadata']['key'] for doc in documentos]
+    cap = set()
+
+    for capitulo in capitulos:
+        for c in capitulo:
+            cap.add(c)
+
+    return cap
 
 if __name__ == "__main__":
-    # Texto que você deseja buscar
-    termo_busca = "mulher"
-    resultados = consultar_banco(termo_busca)
+    consulta = "mulher"
+    resultados = buscar_semantico(consulta)
 
-    # Exibindo os resultados
-    for resultado in resultados:
-        print(f"ID: {resultado.id}\n Page Content: {resultado.payload['conteudo_da_pagina']}\n Score: {resultado.score}\n\n")
-        # print(
-        #     f"ID: {resultado.id}, Metadata: {resultado.payload['metadata']}, Page Content: {resultado.payload['conteudo_da_pagina']}")
+    # Exibir os resultados
+    for doc in resultados:
+        print(f"Metadata: {doc['metadata']}, Conteúdo: {doc['conteudo_da_pagina']}\n")
+
+    capitulos_encontrados = listar_capitulos_da_busca("Mulheres")
+    for capitulo in capitulos_encontrados:
+        print(capitulo)
+
+    print('\n')
+    capitulos_chave_encontrados = listar_chaves_da_busca("mulher")
+    for capitulo in capitulos_chave_encontrados:
+        print(capitulo)
