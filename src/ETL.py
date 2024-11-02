@@ -8,6 +8,7 @@ import pdfplumber
 import pandas as pd
 import re
 
+
 class Etl():
     def __init__(self):
         self.destino = r'../LAKE/RAW/'
@@ -30,7 +31,7 @@ class Etl():
 
                 for linha in linhas:
                     capitulo, _, titulo, pagina = linha
-                    titulo = str(titulo).replace('\n','').strip()
+                    titulo = str(titulo).replace('\n', '').strip()
                     pagina = int(pagina)
 
                     # Adiciona a entrada ao dicionário de sumário
@@ -58,15 +59,18 @@ class Etl():
                                 if page_num >= info['pagina']:
                                     capitulo_atual = f"{cap}. {info['titulo']}"
 
-                            for paragrafo_num, paragrafo_text in enumerate(text.split('\n\n'), start=1):
-                                paragrafo_text = paragrafo_text.replace('\n',',')
-                                dados.append({
-                                    'pagina': page_num,
-                                    'origem': pdf_file,
-                                    'paragrafo': paragrafo_num,
-                                    'capitulo': capitulo_atual,
-                                    'texto': paragrafo_text.strip()
-                                })
+                            for paragrafo_num, paragrafo_text in enumerate(text.split('.\n'), start=1):
+                                paragrafo_text = paragrafo_text.replace('\n', ',')
+                                if paragrafo_text not in 'Sumário':
+                                    paragrafo = paragrafo_text.strip()
+                                    paragrafo = re.sub(r'\.', '', paragrafo)
+                                    dados.append({
+                                        'pagina': page_num,
+                                        'origem': pdf_file,
+                                        'paragrafo': paragrafo_num,
+                                        'capitulo': capitulo_atual,
+                                        'texto': paragrafo
+                                    })
         return dados
 
     def tratamento(self, dados):

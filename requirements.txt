@@ -4,3 +4,5 @@ tqdm
 pandas
 beautifulsoup4
 pdfplumber
+torch
+torchvision

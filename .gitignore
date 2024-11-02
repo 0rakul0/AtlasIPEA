@@ -1,3 +1,4 @@
 .idea/AtlasIPEA.iml
 /.idea/inspectionProfiles
 /.idea
+/Docker/qdrant_data/collections/AtlasIpea

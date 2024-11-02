@@ -18,11 +18,13 @@ setup(
         "tqdm",
         "pandas",
         "beautifulsoup4",
-        "pdfplumber"
+        "pdfplumber",
+        "torch",
+        "torchvision"
     ],
     entry_points={
         "console_scripts": [
-            "etl=src.etl:main",  # Certifique-se de que o ponto de entrada está correto
+            "etl=src.etl:main",
             "script_qdrant=src.script_qdrant:main",
         ]
     },

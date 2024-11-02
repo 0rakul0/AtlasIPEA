@@ -6,11 +6,14 @@ from util.doc import Documento
 import logging
 from tqdm import tqdm
 import pandas as pd
+import torch
 warnings.filterwarnings("ignore")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-embedd = SentenceTransformer('all-MiniLM-L6-v2')
+device = "cuda" if torch.cuda.is_available() else "cpu"
+embedd = SentenceTransformer('all-MiniLM-L6-v2', device=device)
+
 client = QdrantClient(url="http://localhost:6333")
 
 
@@ -30,7 +33,7 @@ def gerador_chunks():
     """Retorna os chunks de dados a serem processados, seja a partir de um CSV ou de exemplo."""
     # Tente carregar a partir de um CSV; caso contrário, retorne um exemplo
     try:
-        chunks = pd.read_csv(r'./LAKE/example.csv', low_memory=False)
+        chunks = pd.read_csv(r'../LAKE/RAW/dados_extracao.csv', low_memory=False)
     except FileNotFoundError:
         # Exemplo estático se o arquivo CSV não for encontrado
         chunks = pd.DataFrame([
@@ -47,7 +50,7 @@ def gerador_chunks():
 # %% gerando
 def csv_para_documento(chuncks):
     documents = []
-    for _, linha in chuncks.iterlinhas():
+    for _, linha in chuncks.iterrows():
         metadata = {
             'pagina': linha['pagina'],  # pagina da informção
             'origem': linha['origem'],  # pdf da informação
@@ -66,8 +69,8 @@ def up_banco():
         points = [
             models.PointStruct(
                 id=idx,
-                vector=embedd.encode(doc.page_content).tolist(),
-                payload={'metadata': doc.metadata, 'page_content': doc.page_content}
+                vector=embedd.encode(doc.conteudo_da_pagina).tolist(),
+                payload={'metadata': doc.metadata, 'conteudo_da_pagina': doc.conteudo_da_pagina}
             ) for idx, doc in tqdm(enumerate(docs))
         ]
         client.upload_points(
