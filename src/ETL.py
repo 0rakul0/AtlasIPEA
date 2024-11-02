@@ -1,59 +1,75 @@
 """
 esse script é dedicado para fazer a raspagem do atlas IPEA e salvar na pasta LAKE os txt dos PDFs
+
+https://www.ipea.gov.br/atlasviolencia/publicacoes
 """
-import requests
-from bs4 import BeautifulSoup as bs
 import os
 import pdfplumber
 import pandas as pd
-
+import re
 
 class Etl():
     def __init__(self):
-        self.link = 'https://www.ipea.gov.br/atlasviolencia/publicacoes'
-        self.destino = './LAKE'
+        self.destino = r'../LAKE/RAW/'
         os.makedirs(self.destino, exist_ok=True)
 
     def run(self):
-        self.extrator()
-        dados = self.tratamento()
-        self.salvar(dados)
+        dados = self.extrator()
+        df = self.tratamento(dados)
+        self.salvar(df)
+
+    def extrair_sumario(self, pdf):
+        sumario = {}
+        sumario_regex = r'(?P<capitulo>\d+(\.\d+)?)\.?\s+(?P<titulo>[A-Za-zÀ-Ýà-ý\s\,\-\+]+)\s+\.*\s*(?P<pagina>\d+)'
+
+        for page_num, page in enumerate(pdf.pages, start=1):
+            text = page.extract_text()
+            if "SUMÁRIO" in text:
+                text = "".join(text)
+                linhas = re.findall(sumario_regex, text)
+
+                for linha in linhas:
+                    capitulo, _, titulo, pagina = linha
+                    titulo = str(titulo).replace('\n','').strip()
+                    pagina = int(pagina)
+
+                    # Adiciona a entrada ao dicionário de sumário
+                    sumario[capitulo] = {'titulo': titulo, 'pagina': pagina}
+                break
+        return sumario
 
     def extrator(self):
-        # extrai o pdf do site
-        response = requests.get(self.link)
-        soup = bs(response.content, 'html.parser')
-
-        pdf_links = soup.findAll('div', {'id': 'iniciodoconteudo'})
-
-        print(pdf_links)
-
-        for i, pdf_link in enumerate(pdf_links):
-            pdf_response = requests.get(pdf_link)
-            pdf_path = os.path.join(self.destino, f"document_{i}.pdf")
-            with open(pdf_path, 'wb') as f:
-                f.write(pdf_response.content)
-            print(f"PDF {i + 1} baixado e salvo em {pdf_path}")
-
-    def tratamento(self):
-        # abre o pdf salvo e gera os dados de 'page','origem','paragrafo','capitulo','texto'
         dados = []
-        for pdf_file in os.listdir(self.destino):
+        arqs = os.listdir(self.destino)
+
+        for pdf_file in arqs:
             if pdf_file.endswith('.pdf'):
                 pdf_path = os.path.join(self.destino, pdf_file)
+
                 with pdfplumber.open(pdf_path) as pdf:
+                    sumario = self.extrair_sumario(pdf)
+
                     for page_num, page in enumerate(pdf.pages, start=1):
                         text = page.extract_text()
+
                         if text:
-                            # Divide o texto em parágrafos
+                            capitulo_atual = 'Capítulo desconhecido'
+                            for cap, info in sumario.items():
+                                if page_num >= info['pagina']:
+                                    capitulo_atual = f"{cap}. {info['titulo']}"
+
                             for paragrafo_num, paragrafo_text in enumerate(text.split('\n\n'), start=1):
+                                paragrafo_text = paragrafo_text.replace('\n',',')
                                 dados.append({
                                     'pagina': page_num,
                                     'origem': pdf_file,
                                     'paragrafo': paragrafo_num,
-                                    'capitulo': 'Capítulo desconhecido',  # Placeholder para o capítulo
+                                    'capitulo': capitulo_atual,
                                     'texto': paragrafo_text.strip()
                                 })
+        return dados
+
+    def tratamento(self, dados):
         df = pd.DataFrame(dados)
         return df
 
